@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Belonging Ripples Activity</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .input-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        input {
+            width: 100%;
+            padding: 8px;
+            margin-top: 4px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 20px 0;
+        }
+
+        .ripple-set {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        .circles {
+            position: relative;
+            width: 600px;
+            height: 600px;
+            margin: 0 auto;
+        }
+
+        .circle {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-wrap: break-word;
+            word-break: break-word;
+            font-size: 14px;
+            line-height: 1.3;
+        }
+
+        .circle-content {
+            max-width: 80%;
+            padding: 10px;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            color: black;
+            background-color: rgba(255, 255, 255, 0.7);
+            border-radius: 5px;
+            z-index: 1000;
+            text-align: center;
+        }
+
+        .outer-text {
+            top: 90%;
+            z-index: 1000;
+        }
+
+        .middle-text {
+            top: 70%;
+            z-index: 1000;
+        }
+
+        .inner-text {
+            top: 50%;
+            z-index: 1000;
+        }
+
+        .name {
+            position: absolute;
+            top: 10px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .delete-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .edit-btn {
+            position: absolute;
+            top: 10px;
+            right: 50px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 0;
+            line-height: 1;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .ripple-set {
+            animation: fadeIn 0.5s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="input-container">
+        <div class="input-group">
+            <input type="text" id="name" placeholder="Your Name (Optional)">
+        </div>
+        <div class="input-group">
+            <input type="text" id="action" placeholder="Action">
+        </div>
+        <div class="input-group">
+            <input type="text" id="impact" placeholder="Immediate Impact">
+        </div>
+        <div class="input-group">
+            <input type="text" id="effect" placeholder="Long-term Effect">
+        </div>
+        <button onclick="addEntry()">Add Entry</button>
+        <button onclick="exportToPDF()">Export to PDF</button>
+    </div>
+    
+    <div id="grid" class="grid"></div>
+
+    <script>
+        const colors = [
+            '#FFB3BA', // pink
+            '#BAFFC9', // green
+            '#BAE1FF', // blue
+            '#FFFFBA', // yellow
+            '#FFB3FF', // purple
+            '#FFD700', // gold
+            '#98FB98', // pale green
+            '#DDA0DD', // plum
+            '#F0E68C', // khaki
+            '#87CEEB'  // sky blue
+        ];
+
+        const entries = [];
+        let editingIndex = -1;
+
+        function addEntry() {
+            const name = document.getElementById('name').value;
+            const action = document.getElementById('action').value;
+            const impact = document.getElementById('impact').value;
+            const effect = document.getElementById('effect').value;
+
+            if (action && impact && effect) {  // Removed name from validation
+                if (editingIndex === -1) {
+                    entries.push({ name, action, impact, effect });
+                } else {
+                    entries[editingIndex] = { name, action, impact, effect };
+                    editingIndex = -1;
+                }
+                renderEntries();
+                clearInputs();
+            }
+        }
+
+        function editEntry(index) {
+            const entry = entries[index];
+            document.getElementById('name').value = entry.name;
+            document.getElementById('action').value = entry.action;
+            document.getElementById('impact').value = entry.impact;
+            document.getElementById('effect').value = entry.effect;
+            editingIndex = index;
+        }
+
+        function deleteEntry(index) {
+            entries.splice(index, 1);
+            renderEntries();
+        }
+
+        function clearInputs() {
+            document.getElementById('name').value = '';
+            document.getElementById('action').value = '';
+            document.getElementById('impact').value = '';
+            document.getElementById('effect').value = '';
+            editingIndex = -1;
+        }
+
+        function exportToPDF() {
+            window.print();
+        }
+
+        function renderEntries() {
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '';
+
+            entries.forEach((entry, index) => {
+                const color = colors[index % colors.length];
+                
+                const rippleSet = document.createElement('div');
+                rippleSet.className = 'ripple-set';
+                
+                const circles = document.createElement('div');
+                circles.className = 'circles';
+
+                // Delete button
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'delete-btn';
+                deleteBtn.innerHTML = '×';
+                deleteBtn.onclick = () => deleteEntry(index);
+                rippleSet.appendChild(deleteBtn);
+
+                // Edit button
+                const editBtn = document.createElement('button');
+                editBtn.className = 'edit-btn';
+                editBtn.innerHTML = '✎';
+                editBtn.onclick = () => editEntry(index);
+                rippleSet.appendChild(editBtn);
+
+                // Name
+                const nameDiv = document.createElement('div');
+                nameDiv.className = 'name';
+                nameDiv.textContent = entry.name;
+                circles.appendChild(nameDiv);
+
+               // Create all circle elements FIRST
+               // Outer circle (effect)
+               const outerCircle = document.createElement('div');
+                outerCircle.className = 'circle';
+                outerCircle.style.width = '560px';
+                outerCircle.style.height = '560px';
+                outerCircle.style.backgroundColor = `${color}33`;
+                circles.appendChild(outerCircle);
+
+                // Middle circle (impact)
+                const middleCircle = document.createElement('div');
+                middleCircle.className = 'circle';
+                middleCircle.style.width = '400px';
+                middleCircle.style.height = '400px';
+                middleCircle.style.backgroundColor = `${color}88`;
+                circles.appendChild(middleCircle);
+
+                // Inner circle (action)
+                const innerCircle = document.createElement('div');
+                innerCircle.className = 'circle';
+                innerCircle.style.width = '240px';
+                innerCircle.style.height = '240px';
+                innerCircle.style.backgroundColor = `${color}cc`;
+                circles.appendChild(innerCircle);
+
+                // NOW add the text AFTER the circles
+                // Outer circle text
+                const outerContent = document.createElement('div');
+                outerContent.className = 'circle-content outer-text';
+                outerContent.textContent = entry.effect;
+                outerContent.style.zIndex = '1000';
+                circles.appendChild(outerContent);
+
+                // Middle circle text
+                const middleContent = document.createElement('div');
+                middleContent.className = 'circle-content middle-text';
+                middleContent.textContent = entry.impact;
+                middleContent.style.zIndex = '1000';
+                circles.appendChild(middleContent);
+
+                // Inner circle text
+                const innerContent = document.createElement('div');
+                innerContent.className = 'circle-content inner-text';
+                innerContent.textContent = entry.action;
+                innerContent.style.zIndex = '1000';
+                circles.appendChild(innerContent);
+
+                rippleSet.appendChild(circles);
+                grid.appendChild(rippleSet);
+            });
+        }
+    </script>
+</body>
+</html>
